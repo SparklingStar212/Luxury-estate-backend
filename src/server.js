@@ -1,21 +1,10 @@
-import dotenv from 'dotenv'
 import app from './app.js'
-import { connectDB } from './config/db.js'
+import { env } from './config/env.js'
+import { connectDB } from './config/database.js'
 
-dotenv.config()
+connectDB()
 
-const PORT = process.env.PORT
-
-const startServer = async () => {
-  try {
-    await connectDB()
-    app.listen(PORT, () => {
-      console.log(`Luxury Estate API running on port ${PORT}`)
-    })
-  } catch (error) {
-    console.error('Failed to start API:', error.message)
-    process.exit(1)
-  }
-}
-
-startServer()
+app.listen(env.port, () => {
+  console.log(`Backend running on http://localhost:${env.port}`)
+})
+  
