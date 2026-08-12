@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { User } from '../data/schema.js'
 import { createAuthToken, sanitizeUser, verifyPassword } from '../utils/auth.js'
 
 export const login = (req, res) => {

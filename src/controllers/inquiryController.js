@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { Inquiry } from '../data/schema.js'
 
 const formatInquiry = (inquiry) => ({
   id: inquiry.id,

@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { Collection } from '../data/schema.js'
 
 const formatCollection = (collection) => ({
   id: collection.id,

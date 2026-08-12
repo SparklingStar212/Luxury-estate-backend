@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { Agent } from '../data/schema.js'
 
 const formatAgent = (agent) => ({
   id: agent.id,

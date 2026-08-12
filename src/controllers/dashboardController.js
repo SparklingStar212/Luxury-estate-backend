@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { DashboardMetric } from '../data/schema.js'
 
 const formatListing = (property) => ({
   id: property.id,

@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { ConciergeService } from '../data/schema.js'
 
 const formatService = (service) => ({
   id: service.id,

@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { MembershipPlan } from '../data/schema.js'
 
 const formatPlan = (plan) => ({
   id: plan.id,

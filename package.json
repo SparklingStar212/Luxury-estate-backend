@@ -8,7 +8,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "lint": "echo \"Add backend linting in step 2\"",
-    "test": "node --test"
+    "test": "node --test",
+    "seed": "node seedDatabase.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

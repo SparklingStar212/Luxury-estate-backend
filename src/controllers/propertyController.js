@@ -1,4 +1,4 @@
-import { store } from '../data/store.js'
+import { Property } from '../data/schema.js'
 import { authenticate } from '../middleware/authenticate.js'
 import { authorize } from '../middleware/authorize.js'
 import { roles } from '../config/roles.js'
