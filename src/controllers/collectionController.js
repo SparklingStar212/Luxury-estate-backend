@@ -1,136 +1,180 @@
-import { Collection } from '../data/schema.js'
+import { Collection, Property, CollectionArticle } from '../data/schema.js'
 
-const formatCollection = (collection) => ({
-  id: collection.id,
-  slug: collection.slug,
-  title: collection.title,
-  description: collection.description,
-  coverImageUrl: collection.coverImageUrl,
-  featured: collection.featured,
-  propertyIds: collection.propertyIds || [],
-  articleIds: collection.articleIds || [],
-  published: collection.published,
-  createdAt: collection.createdAt,
-  updatedAt: collection.updatedAt,
-})
+// --- HELPER FORMATTERS ---
+const formatCollection = (collection) => {
+  const item = collection.toObject ? collection.toObject() : collection
+  return {
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    description: item.description,
+    coverImageUrl: item.coverImageUrl,
+    featured: item.featured,
+    propertyIds: item.propertyIds || [],
+    articleIds: item.articleIds || [],
+    published: item.published,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }
+}
 
-const formatArticle = (article) => ({
-  id: article.id,
-  collectionId: article.collectionId,
-  slug: article.slug,
-  title: article.title,
-  description: article.description,
-  imageUrl: article.imageUrl,
-  category: article.category,
-  published: article.published,
-  createdAt: article.createdAt,
-  updatedAt: article.updatedAt,
-})
+const formatArticle = (article) => {
+  const item = article.toObject ? article.toObject() : article
+  return {
+    id: item.id,
+    collectionId: item.collectionId,
+    slug: item.slug,
+    title: item.title,
+    description: item.description,
+    imageUrl: item.imageUrl,
+    category: item.category,
+    published: item.published,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }
+}
 
-const formatProperty = (property) => ({
-  id: property.id,
-  slug: property.slug,
-  title: property.title,
-  description: property.description,
-  price: property.price,
-  amount: `$${property.price.toLocaleString('en-US')}`,
-  address: property.address,
-  city: property.city,
-  state: property.state,
-  country: property.country,
-  beds: property.beds,
-  baths: property.baths,
-  areaSqft: property.areaSqft,
-  propertyType: property.propertyType,
-  status: property.status,
-  featured: property.featured,
-  image: property.heroImageUrl,
-  heroImageUrl: property.heroImageUrl,
-  galleryImages: property.galleryImages || [],
-  floorPlans: property.floorPlans || [],
-  amenities: property.amenities || [],
-  overview: property.overview,
-  agentId: property.agentId,
-  createdAt: property.createdAt,
-  updatedAt: property.updatedAt,
-})
+const formatProperty = (property) => {
+  const item = property.toObject ? property.toObject() : property
+  return {
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    description: item.description,
+    price: item.price,
+    amount: item.price ? `$${item.price.toLocaleString('en-US')}` : '$0',
+    address: item.address,
+    city: item.city,
+    state: item.state,
+    country: item.country,
+    beds: item.beds,
+    baths: item.baths,
+    areaSqft: item.areaSqft,
+    propertyType: item.propertyType,
+    status: item.status,
+    featured: item.featured,
+    image: item.heroImageUrl,
+    heroImageUrl: item.heroImageUrl,
+    galleryImages: item.galleryImages || [],
+    floorPlans: item.floorPlans || [],
+    amenities: item.amenities || [],
+    overview: item.overview,
+    agentId: item.agentId,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }
+}
 
-const getCollectionPayload = (collection) => {
-  const properties = (collection.propertyIds || [])
-    .map((propertyId) => store.properties.find((property) => property.id === propertyId))
-    .filter(Boolean)
-    .map(formatProperty)
+// Helper to assemble full collection with its related properties and articles from MongoDB
+const getCollectionPayload = async (collection) => {
+  const propertyIds = collection.propertyIds || []
+  const articleIds = collection.articleIds || []
 
-  const articles = (collection.articleIds || [])
-    .map((articleId) => store.collectionArticles.find((article) => article.id === articleId))
-    .filter(Boolean)
-    .map(formatArticle)
+  // Fetch related properties and articles asynchronously
+  const [propertiesData, articlesData] = await Promise.all([
+    propertyIds.length > 0 ? Property.find({ id: { $in: propertyIds } }) : [],
+    articleIds.length > 0 ? CollectionArticle.find({ id: { $in: articleIds } }) : [],
+  ])
 
   return {
     ...formatCollection(collection),
-    properties,
-    articles,
+    properties: propertiesData.map(formatProperty),
+    articles: articlesData.map(formatArticle),
   }
 }
 
-export const listCollections = (req, res) => {
-  const search = String(req.query.search || req.query.q || '').toLowerCase()
-  const featuredOnly = req.query.featured === 'true' || req.query.featured === '1'
+// --- CONTROLLER FUNCTIONS ---
 
-  let items = [...store.collections]
+export const listCollections = async (req, res) => {
+  try {
+    const search = String(req.query.search || req.query.q || '').trim()
+    const featuredOnly = req.query.featured === 'true' || req.query.featured === '1'
 
-  if (search) {
-    items = items.filter((collection) => [collection.title, collection.description].filter(Boolean).join(' ').toLowerCase().includes(search))
+    const filter = {}
+
+    if (featuredOnly) {
+      filter.featured = true
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ]
+    }
+
+    const collections = await Collection.find(filter)
+
+    res.json({
+      items: collections.map(formatCollection),
+      total: collections.length,
+    })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching collections', error: error.message })
   }
+}
 
-  if (featuredOnly) {
-    items = items.filter((collection) => collection.featured)
+export const listFeaturedCollections = async (_req, res) => {
+  try {
+    const collections = await Collection.find({ featured: true })
+    res.json({ items: collections.map(formatCollection) })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching featured collections', error: error.message })
   }
-
-  res.json({
-    items: items.map(formatCollection),
-    total: items.length,
-  })
 }
 
-export const listFeaturedCollections = (_req, res) => {
-  const items = store.collections.filter((collection) => collection.featured).map(formatCollection)
-  res.json({ items })
-}
+export const getCollectionBySlug = async (req, res) => {
+  try {
+    const collection = await Collection.findOne({ slug: req.params.slug })
 
-export const getCollectionBySlug = (req, res) => {
-  const collection = store.collections.find((item) => item.slug === req.params.slug)
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' })
+    }
 
-  if (!collection) {
-    return res.status(404).json({ message: 'Collection not found' })
+    const payload = await getCollectionPayload(collection)
+    return res.json({ collection: payload })
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching collection', error: error.message })
   }
-
-  return res.json({ collection: getCollectionPayload(collection) })
 }
 
-export const listCollectionArticles = (_req, res) => {
-  const items = store.collectionArticles.filter((article) => article.published).map(formatArticle)
-  res.json({ items })
-}
-
-export const getJournalArticleBySlug = (req, res) => {
-  const article = store.collectionArticles.find((item) => item.slug === req.params.slug)
-
-  if (!article) {
-    return res.status(404).json({ message: 'Article not found' })
+export const listCollectionArticles = async (_req, res) => {
+  try {
+    const articles = await CollectionArticle.find({ published: true })
+    res.json({ items: articles.map(formatArticle) })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching articles', error: error.message })
   }
-
-  return res.json({ article: formatArticle(article) })
 }
 
-export const getCollectionStats = (_req, res) => {
-  const totalCollections = store.collections.length
-  const featuredCollections = store.collections.filter((collection) => collection.featured).length
-  const totalArticles = store.collectionArticles.length
+export const getJournalArticleBySlug = async (req, res) => {
+  try {
+    const article = await CollectionArticle.findOne({ slug: req.params.slug })
 
-  res.json({
-    totalCollections,
-    featuredCollections,
-    totalArticles,
-  })
+    if (!article) {
+      return res.status(404).json({ message: 'Article not found' })
+    }
+
+    return res.json({ article: formatArticle(article) })
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching article', error: error.message })
+  }
+}
+
+export const getCollectionStats = async (_req, res) => {
+  try {
+    const [totalCollections, featuredCollections, totalArticles] = await Promise.all([
+      Collection.countDocuments(),
+      Collection.countDocuments({ featured: true }),
+      CollectionArticle.countDocuments(),
+    ])
+
+    res.json({
+      totalCollections,
+      featuredCollections,
+      totalArticles,
+    })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching stats', error: error.message })
+  }
 }
