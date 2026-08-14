@@ -1,46 +1,40 @@
 import { ConciergeService } from '../data/schema.js'
 
-const formatService = (service) => ({
-  id: service.id,
-  slug: service.slug,
-  title: service.title,
-  description: service.description,
-  icon: service.icon,
-  sortOrder: service.sortOrder,
-  published: service.published,
-  createdAt: service.createdAt,
-  updatedAt: service.updatedAt,
-})
-
-export const listConciergeServices = (_req, res) => {
-  const items = [...store.conciergeServices]
-    .filter((service) => service.published)
-    .sort((left, right) => left.sortOrder - right.sortOrder)
-    .map(formatService)
-
-  res.json({ items, total: items.length })
-}
-
-export const getConciergeServiceBySlug = (req, res) => {
-  const service = store.conciergeServices.find((item) => item.slug === req.params.slug)
-
-  if (!service) {
-    return res.status(404).json({ message: 'Concierge service not found' })
+const formatService = (service) => {
+  if (!service) return null
+  const item = service.toObject ? service.toObject() : service
+  return {
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    description: item.description,
+    icon: item.icon,
+    sortOrder: item.sortOrder,
+    published: item.published,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
   }
-
-  return res.json({ service: formatService(service) })
 }
 
-export const getConciergeContact = (_req, res) => {
-  res.json({
-    priorityLine: '+1 (800) LUXE-PRESTIGE',
-    directEmail: 'concierge@luxuryestate.test',
-    hours: '24/7',
-    messagePrompt: 'Request a confidential consultation today.',
-  })
+export const listConciergeServices = async (_req, res) => {
+  try {
+    const services = await ConciergeService.find({ published: true }).sort({ sortOrder: 1 })
+    res.json({ items: services.map(formatService), total: services.length })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching concierge services', error: error.message })
+  }
 }
 
-export const getConciergeStats = (_req, res) => {
-  const totalServices = store.conciergeServices.filter((service) => service.published).length
-  res.json({ totalServices })
+export const getConciergeServiceBySlug = async (req, res) => {
+  try {
+    const service = await ConciergeService.findOne({ slug: req.params.slug })
+
+    if (!service) {
+      return res.status(404).json({ message: 'Concierge service not found' })
+    }
+
+    res.json({ service: formatService(service) })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching concierge service', error: error.message })
+  }
 }

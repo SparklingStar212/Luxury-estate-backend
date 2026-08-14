@@ -1,12 +1,12 @@
 import dotenv from 'dotenv'
 import { connectDB } from './config/database.js' // Your DB connection file
-import { seedData } from './seed.js'
+import { seedData } from './data/seed.js' // Your seed data file
 import {
-  CollectionModel,
-  InquiryModel,
-  ConciergeServiceModel,
-  PropertyModel
-} from './models/schemas.js'
+  Collection,
+  Inquiry,
+  ConciergeService,
+  Property
+} from './data/schema.js'
 
 dotenv.config()
 
@@ -15,16 +15,16 @@ const seedDatabase = async () => {
     await connectDB()
 
     console.log('Clearing existing collections in MongoDB...')
-    await CollectionModel.deleteMany({})
-    await InquiryModel.deleteMany({})
-    await ConciergeServiceModel.deleteMany({})
-    await PropertyModel.deleteMany({})
+    await Collection.deleteMany({})
+    await Inquiry.deleteMany({})
+    await ConciergeService.deleteMany({})
+    await Property.deleteMany({})
 
     console.log('Inserting seed data into MongoDB...')
-    await CollectionModel.insertMany(seedData.collections)
-    await InquiryModel.insertMany(seedData.inquiries)
-    await ConciergeServiceModel.insertMany(seedData.conciergeServices)
-    await PropertyModel.insertMany(seedData.properties)
+    await Collection.insertMany(seedData.collections)
+    await Inquiry.insertMany(seedData.inquiries)
+    await ConciergeService.insertMany(seedData.conciergeServices)
+    await Property.insertMany(seedData.properties)
 
     console.log('Database successfully seeded!')
     process.exit(0)

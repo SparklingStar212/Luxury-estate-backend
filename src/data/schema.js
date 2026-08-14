@@ -147,7 +147,7 @@ const inquirySchema = new mongoose.Schema(
     agentId: Number,
     status: {
       type: String,
-      enum: ['new', 'open', 'pending', 'urgent', 'closed'],
+      enum: ['new', 'open', 'pending', 'in_progress', 'urgent', 'closed'],
       default: 'new',
     },
     priority: {

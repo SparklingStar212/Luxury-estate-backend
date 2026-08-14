@@ -9,7 +9,7 @@
     "start": "node src/server.js",
     "lint": "echo \"Add backend linting in step 2\"",
     "test": "node --test",
-    "seed": "node seedDatabase.js"
+    "seed": "node src/seedDatabase.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
