@@ -1,6 +1,15 @@
 import dotenv from 'dotenv'
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
 
-dotenv.config()
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') }) // change according to the path to .env
+
+if (!process.env.MONGODB_URI) {
+  throw new Error('MongoDB URI not found. Verify the .env path')
+}
 
 export const env = {
   port: Number(process.env.PORT || 4000),
